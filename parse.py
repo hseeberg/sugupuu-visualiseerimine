@@ -1,0 +1,458 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+import re, json, math, sys
+
+SRC = next((a for a in sys.argv[1:] if a.lower().endswith(".md")), "input.md")
+
+# ---------- geocoding dictionary (parish / village level, approximate) ----------
+# key substrings (lowercase) -> (lat, lon). Matched longest-key-first.
+PLACES = {
+    # --- Tallinn / Harju ---
+    "tallinn": (59.437, 24.754),
+    "harjumaa": (59.35, 24.9),
+    # --- Viljandimaa: Pilistvere / Kabala / Kõo cluster (from detail crop) ---
+    "sagevere": (58.845, 25.520),
+    "türi": (58.808, 25.432),
+    "paluküla": (58.700, 25.680),
+    "suur-villevere": (58.720, 25.460),
+    "villevere": (58.720, 25.460),
+    "vahamulla": (58.710, 25.560),
+    "arussaare": (58.600, 25.600),
+    "kobinsaare": (58.590, 25.590),
+    "mändla": (58.610, 25.630),
+    "venevere": (58.700, 25.860),
+    "võrevere": (58.750, 25.780),
+    "võisiku": (58.610, 25.870),
+    "rassi": (58.700, 25.400),
+    "kurla": (58.700, 25.660),
+    "koksvere": (58.690, 25.688),
+    "kahala": (58.700, 25.470),       # Viljandi Kahala (not Harju)
+    "laeva": (58.730, 25.560),        # Laeva küla, Kabala
+    "kabala": (58.770, 25.545),
+    "kõo": (58.664, 25.762),
+    "pilistvere": (58.723, 25.730),
+    "võhma": (58.632, 25.553),
+    "olustvere": (58.560, 25.550),
+    "navesti": (58.500, 25.420),
+    "nawwasti": (58.500, 25.420),
+    "reegoldi": (58.520, 25.450),
+    "paksu": (58.520, 25.450),
+    "suure-jaani": (58.536, 25.470),
+    "suure- jaani": (58.536, 25.470),
+    "taagepera": (58.00, 25.80),
+    "valga raj": (57.90, 25.90),
+    "valga": (57.78, 26.03),
+    "viljandimaa": (58.36, 25.60),
+    "viljandi": (58.36, 25.60),
+    "järvamaa": (58.88, 25.50),
+    "järva": (58.88, 25.50),
+    # --- Hiiumaa (Emmaste / Käina, from detail crop) ---
+    "vanamõisa": (58.730, 22.560),
+    "metsalauka": (58.700, 22.580),
+    "härma": (58.700, 22.600),
+    "laasma": (58.710, 22.620),
+    "leisu": (58.720, 22.650),
+    "leiso": (58.720, 22.650),
+    "ollima": (58.740, 22.600),
+    "tärkma": (58.740, 22.580),
+    "terckma": (58.740, 22.580),
+    "männamaa": (58.780, 22.615),
+    "lelu": (58.755, 22.630),
+    "haldi": (58.740, 22.560),
+    "mänspe": (58.730, 22.540),
+    "tohvri": (58.660, 22.590),
+    "külaküla": (58.710, 22.590),
+    "risti": (58.700, 22.600),
+    "sõru": (58.680, 22.530),
+    "nurste": (58.700, 22.560),
+    "valgu": (58.720, 22.660),
+    "harju, käina": (58.700, 22.650),
+    "jausa": (58.740, 22.690),
+    "prähnu": (58.800, 22.750),
+    "prehno": (58.800, 22.750),
+    "selja": (58.760, 22.700),
+    "luguse": (58.760, 22.720),
+    "putkaste": (58.790, 22.760),
+    "vähelelu": (58.830, 22.780),
+    "orjaku": (58.800, 22.750),
+    "kassari": (58.803, 22.833),
+    "esiküla": (58.800, 22.820),
+    "harjuküla": (58.820, 22.800),
+    "harju, vaemla": (58.840, 22.850),
+    "vaemla": (58.850, 22.850),
+    "holle": (58.750, 22.700),
+    "öngu": (58.800, 22.500),
+    "õngu": (58.800, 22.500),
+    "kogri": (58.820, 22.780),
+    "vana-jõe": (58.800, 22.750),
+    "soo, käina": (58.780, 22.720),
+    "kärdla": (58.998, 22.749),
+    "emmaste": (58.717, 22.620),
+    "käina": (58.828, 22.780),
+    "pühalepa": (58.870, 22.900),
+    "hiiumaa": (58.80, 22.70),
+    "läänemaa (hiiumaa)": (58.717, 22.620),
+    "läänemaa": (58.95, 23.90),
+    # --- Läänemaa (western Estonia): Lihula / Karuse / Hanila / Matsalu cluster ---
+    "lihula": (58.680, 23.843),
+    "karuse": (58.629, 23.607),
+    "hanila": (58.621, 23.545),
+    "matsalu": (58.755, 23.700),
+    "parivere": (58.660, 23.800),
+    "virtsu": (58.573, 23.513),
+    "kirbla": (58.723, 23.872),
+    "massu": (58.660, 23.780),
+    "vatla": (58.600, 23.720),
+    "salevere": (58.680, 23.750),
+    "saastna": (58.620, 23.650),
+    "puise": (58.830, 23.550),
+    "ridala": (58.900, 23.620),
+    "haapsalu": (58.943, 23.541),
+    "taebla": (59.000, 23.720),
+    "palivere": (59.020, 23.850),
+    "martna": (58.900, 23.570),
+    "kullamaa": (58.830, 24.020),
+    "vigala": (58.750, 24.350),
+    "velise": (58.720, 24.230),
+    "nõva": (59.160, 23.680),
+    "noarootsi": (59.000, 23.350),
+    "pürksi": (59.050, 23.380),
+    "sutlepa": (59.030, 23.450),
+    "märjamaa": (58.905, 24.017),
+    "vana-vigala": (58.760, 24.320),
+    "kirna": (58.780, 24.280),
+    "haimre": (58.850, 24.230),
+    # --- Setumaa / Petseri (from detail crop; some now in Russia) ---
+    "tupina": (57.870, 27.520),
+    "ступина": (57.870, 27.520),
+    "ступино": (57.800, 27.650),
+    "stupina": (57.800, 27.650),
+    "stupino": (57.800, 27.650),
+    "perdaku": (57.870, 27.500),
+    "perdagu": (57.870, 27.500),
+    "lädinä": (57.830, 27.580),
+    "lyadinka": (57.830, 27.580),
+    "ledinok": (57.830, 27.580),
+    "лядинка": (57.830, 27.580),
+    "duravina": (57.820, 27.630),
+    "duravino": (57.820, 27.630),
+    "turavino": (57.820, 27.630),
+    "дуровино": (57.820, 27.630),
+    "дуравино": (57.820, 27.630),
+    "kostkovo": (57.930, 27.640),
+    "värska": (57.950, 27.633),
+    "vedernika": (57.860, 27.720),
+    "vedernik": (57.860, 27.720),
+    "makarova": (57.840, 27.660),
+    "lõpolja": (57.750, 27.800),
+    "злыполье": (57.750, 27.800),
+    "злы́полье": (57.750, 27.800),
+    "kulje": (57.760, 27.800),
+    "nedsaja": (57.870, 27.430),
+    "matsuri": (57.790, 27.500),
+    "treski": (57.900, 27.480),
+    "obinitsa": (57.780, 27.420),
+    "meremäe": (57.720, 27.450),
+    "saatse": (57.850, 27.470),
+    "petseri": (57.810, 27.615),
+    "setumaa": (57.850, 27.470),
+    "setomaa": (57.850, 27.470),
+    "venemaa": (57.830, 27.700),
+    # --- all Estonian counties (low-priority fallback so any "village, County" lands right) ---
+    "raplamaa": (58.95, 24.75), "rapla": (59.007, 24.792),
+    "pärnumaa": (58.40, 24.55), "pärnu": (58.386, 24.497),
+    "tartumaa": (58.42, 26.72), "tartu": (58.378, 26.729),
+    "jõgevamaa": (58.75, 26.40), "jõgeva": (58.746, 26.394),
+    "põlvamaa": (58.05, 27.05), "põlva": (58.060, 27.069),
+    "võrumaa": (57.80, 27.00), "võru": (57.834, 27.019),
+    "valgamaa": (57.90, 26.20),
+    "lääne-virumaa": (59.30, 26.30), "lääne-viru": (59.30, 26.30), "virumaa": (59.30, 26.80),
+    "ida-virumaa": (59.30, 27.40), "ida-viru": (59.30, 27.40),
+    "saaremaa": (58.40, 22.55), "saare maakond": (58.40, 22.55),
+    "rapla maakond": (58.95, 24.75), "pärnu maakond": (58.40, 24.55),
+    "tartu maakond": (58.42, 26.72), "harju maakond": (59.20, 24.90),
+    "lääne maakond": (58.90, 23.80), "lääne-viru maakond": (59.30, 26.30),
+    "ida-viru maakond": (59.30, 27.40), "jõgeva maakond": (58.75, 26.40),
+    "põlva maakond": (58.05, 27.05), "võru maakond": (57.80, 27.00),
+    "valga maakond": (57.90, 26.20), "viljandi maakond": (58.36, 25.60),
+    "järva maakond": (58.88, 25.50), "hiiu maakond": (58.85, 22.65),
+}
+# County / country names are the LEAST specific -> only used as fallback.
+LOW = {"harjumaa","viljandimaa","viljandi","järvamaa","järva","hiiumaa",
+       "läänemaa","läänemaa (hiiumaa)","setumaa","setomaa","venemaa","valga","valga raj",
+       "raplamaa","pärnumaa","tartumaa","jõgevamaa","põlvamaa","võrumaa","valgamaa",
+       "lääne-virumaa","lääne-viru","virumaa","ida-virumaa","ida-viru","saaremaa",
+       "saare maakond","rapla maakond","pärnu maakond","tartu maakond","harju maakond",
+       "lääne maakond","lääne-viru maakond","ida-viru maakond","jõgeva maakond",
+       "põlva maakond","võru maakond","valga maakond","viljandi maakond",
+       "järva maakond","hiiu maakond"}
+HIGH_KEYS = sorted([k for k in PLACES if k not in LOW], key=len, reverse=True)
+LOW_KEYS  = sorted([k for k in PLACES if k in LOW], key=len, reverse=True)
+
+def geocode(place):
+    if not place:
+        return None
+    p = place.lower()
+    for k in HIGH_KEYS:      # specific village / parish first
+        if k in p:
+            return PLACES[k]
+    for k in LOW_KEYS:       # county fallback
+        if k in p:
+            return PLACES[k]
+    return None
+
+# ---------- line parsing ----------
+LINE_RE = re.compile(r'^[>\s]*(\d+)\\?\.\s*\[(.*?)\]\((https?://[^)]+)\)(.*)$')
+
+MONTHS = "January|February|March|April|May|June|July|August|September|October|November|December"
+
+def clean_name(s):
+    s = s.replace('\\[', '[').replace('\\]', ']').replace('\\.', '.')
+    return s.strip()
+
+def parse_birth(rest):
+    """Return (year:int|None, approx:bool, place:str|None)."""
+    rest = rest.strip()
+    # isolate birth clause: from 'b.' up to '; d.' or ';' or end
+    m = re.search(r'\bb\.\s*(.*?)(?:;|$)', rest)
+    if not m:
+        return (None, False, None)
+    seg = m.group(1).strip().rstrip(' ,')
+    approx = bool(re.search(r'\b(circa|before|between|after)\b', seg, re.I))
+    ym = re.search(r'\b(1[5-9]\d\d|20\d\d)\b', seg)
+    year = int(ym.group(1)) if ym else None
+    # place = seg with the date portion removed
+    place = seg
+    # remove date patterns
+    place = re.sub(r'\b(circa|before|after|between)\b', '', place, flags=re.I)
+    place = re.sub(rf'(?:{MONTHS})\s+\d{{1,2}},?\s*', '', place)
+    place = re.sub(rf'(?:{MONTHS})\s+', '', place)
+    place = re.sub(r'\b1[5-9]\d\d\b|\b20\d\d\b', '', place)
+    place = re.sub(r'\band\b', '', place, flags=re.I)
+    place = place.replace(',', ' , ')
+    place = re.sub(r'\s+', ' ', place)
+    place = place.strip(' ,')
+    if not place:
+        place = None
+    return (year, approx, place)
+
+nodes = []
+last_at_gen = {}   # gen -> node index
+raw_lines = open(SRC, encoding='utf-8').read().splitlines()
+
+for ln in raw_lines:
+    m = LINE_RE.match(ln)
+    if not m:
+        continue
+    gen = int(m.group(1))
+    name = clean_name(m.group(2))
+    url = m.group(3)
+    rest = m.group(4)
+    year, approx, place = parse_birth(rest)
+    parent_idx = last_at_gen.get(gen - 1)   # this node is an ANCESTOR (parent) of parent_idx-node
+    idx = len(nodes)
+    nodes.append({
+        "id": idx,
+        "gen": gen,
+        "name": name,
+        "url": url,
+        "byear": year,           # real birth year or None
+        "approx": approx,        # date uncertain
+        "place": place,          # cleaned place string or None
+        "child": parent_idx,     # the descendant this ancestor links up to
+        "lat": None, "lon": None,
+        "place_inherited": False,
+        "year_estimated": False,
+    })
+    last_at_gen[gen] = idx
+
+print("parsed nodes:", len(nodes))
+
+# ---------- geocode ----------
+for n in nodes:
+    c = geocode(n["place"])
+    if c:
+        n["lat"], n["lon"] = c[0], c[1]
+
+geo_known = sum(1 for n in nodes if n["lat"] is not None)
+print("geocoded directly:", geo_known, "/", len(nodes))
+
+# report unmatched places (had a place string but no coord)
+unmatched = {}
+for n in nodes:
+    if n["place"] and n["lat"] is None:
+        unmatched[n["place"]] = unmatched.get(n["place"], 0) + 1
+print("--- unmatched place strings (place present, no coord) ---")
+for k, v in sorted(unmatched.items(), key=lambda x: -x[1]):
+    print(f"  {v:2d}  {k}")
+
+# ---------- branch tagging (which gen-BRANCH_GEN line each node belongs to) ----------
+# ancestors: BRANCH_GEN=3 (grandparent lines).  descendants: BRANCH_GEN=2 (root's children).
+DESC = ('--descendants' in sys.argv) or ('--desc' in sys.argv)
+BRANCH_GEN = 2 if DESC else 3
+
+children = {}
+for n in nodes:
+    children.setdefault(n["child"], []).append(n["id"])
+
+def descend_branch(root_id, branch):
+    stack = [root_id]
+    while stack:
+        cur = stack.pop()
+        nodes[cur]["branch"] = branch
+        for ch in children.get(cur, []):
+            stack.append(ch)
+
+for n in nodes:
+    n["branch"] = None
+for n in nodes:
+    if n["gen"] < BRANCH_GEN:
+        n["branch"] = "root"
+for n in nodes:
+    if n["gen"] == BRANCH_GEN and n["branch"] is None:
+        descend_branch(n["id"], f'g{BRANCH_GEN}_{n["id"]}')
+
+# names of the branch heads (data-driven; used by the legend, no hard-coding)
+heads = [n for n in nodes if n["gen"] == BRANCH_GEN]
+branch_names = {}
+for n in heads:
+    branch_names[f'g{BRANCH_GEN}_{n["id"]}'] = n["name"]
+print(f"--- branches (gen {BRANCH_GEN}) ---")
+for b, nm in branch_names.items():
+    cnt = sum(1 for x in nodes if x.get("branch") == b)
+    print(f"  {b}: {nm}  ({cnt} nodes)")
+
+# ---------- inherit location from any coord'd neighbour (works for root too) ----------
+# reverse edges: which nodes point to this node as their edge partner
+rev = {}
+for n in nodes:
+    rev.setdefault(n["child"], []).append(n["id"])
+changed = True
+while changed:
+    changed = False
+    for n in nodes:
+        if n["lat"] is not None: continue
+        cands = ([n["child"]] if n["child"] is not None else []) + rev.get(n["id"], [])
+        for cid in cands:
+            if cid is not None and nodes[cid]["lat"] is not None:
+                n["lat"], n["lon"] = nodes[cid]["lat"], nodes[cid]["lon"]
+                n["place_inherited"] = True; changed = True; break
+
+order = sorted(range(len(nodes)), key=lambda i: nodes[i]["gen"])
+still_missing = [n for n in nodes if n["lat"] is None]
+print("still missing coords after inherit:", len(still_missing))
+for n in still_missing[:20]:
+    print("   ", n["gen"], n["name"], "| child:", n["child"])
+
+# ---------- declump jitter + keep island (Hiiumaa) points ON the island ----------
+import json as _json
+_land = _json.load(open("map.json"))["land"]
+# pick the Hiiumaa polygon by bbox
+def _bbox(r):
+    lo=[p[0] for p in r]; la=[p[1] for p in r]; return min(lo),max(lo),min(la),max(la)
+HIIU = None
+for r in _land:
+    b=_bbox(r)
+    if 21.7<b[0]<22.2 and 22.9<b[1]<23.2 and 58.6<b[2]<58.8 and 59.0<b[3]<59.2:
+        HIIU = r; break
+def pip(lat, lon, ring):
+    # ray casting; ring = [[lon,lat],...]
+    inside=False; n=len(ring); j=n-1
+    for i in range(n):
+        xi,yi=ring[i][0],ring[i][1]; xj,yj=ring[j][0],ring[j][1]
+        if ((yi>lat)!=(yj>lat)) and (lon < (xj-xi)*(lat-yi)/((yj-yi) or 1e-12)+xi):
+            inside=not inside
+        j=i
+    return inside
+
+# Even, bounded spread for co-located people: everyone sharing a spot is fanned out on a
+# sunflower spiral inside a small disk (<= ~3 km). Tight at 1x (near true location), but the
+# geographic offset means ZOOMING IN separates them so each person is pickable.
+from collections import defaultdict
+GOLD = math.pi * (3 - math.sqrt(5))
+_buckets = defaultdict(list)
+for n in nodes:
+    if n["lat"] is None: continue
+    _buckets[(round(n["lat"]/0.004), round(n["lon"]/0.004))].append(n["id"])
+spread = {}
+for key, ids in _buckets.items():
+    ids = sorted(ids)
+    Nn = len(ids)
+    if Nn == 1:
+        spread[ids[0]] = (0.0, 0.0); continue
+    R = min(0.030, 0.006 + 0.0045*math.sqrt(Nn))      # disk radius in degrees (~ up to 3 km)
+    for j, i in enumerate(ids):
+        rr = R*math.sqrt((j+0.5)/Nn); a = j*GOLD
+        spread[i] = (rr*math.sin(a), rr*math.cos(a)/0.55)  # (dlat, dlon); dlon widened for round disk
+
+hiiu_bbox_ok = lambda la,lo: (21.8<lo<23.15 and 58.6<la<59.15)
+CEN=None
+if HIIU:
+    CEN=(sum(p[1] for p in HIIU)/len(HIIU), sum(p[0] for p in HIIU)/len(HIIU))  # (lat,lon)
+clamped=0
+for n in nodes:
+    if n["lat"] is None: continue
+    base=(n["lat"], n["lon"])
+    dla,dlo=spread.get(n["id"],(0.0,0.0))
+    cand=(base[0]+dla, base[1]+dlo)
+    if HIIU and hiiu_bbox_ok(base[0],base[1]):     # any point born on Hiiumaa stays on the island
+        placed=False
+        for t in (1.0,0.7,0.45,0.25,0.1,0.0):        # 1) shrink spread toward base
+            c=(base[0]+dla*t, base[1]+dlo*t)
+            if pip(c[0], c[1], HIIU): n["lat"],n["lon"]=c; placed=True; break
+        if not placed:                                # 2) base off simplified outline -> move inland
+            for s in (0.06,0.12,0.20,0.30,0.45,0.60,0.80):
+                c=(base[0]+(CEN[0]-base[0])*s, base[1]+(CEN[1]-base[1])*s)
+                if pip(c[0], c[1], HIIU): n["lat"],n["lon"]=c; placed=True; break
+        if not placed:
+            n["lat"],n["lon"]=base; clamped+=1
+    else:
+        n["lat"],n["lon"]=cand
+print("Hiiumaa polygon found:", HIIU is not None, "| still-outside:", clamped)
+
+
+# ---------- estimate birth years (direction-aware ~30 yr / generation) ----------
+# STEP = year change when moving one generation AWAY from the root
+#   ancestor tree: away = older  -> -30 ;  descendant tree: away = younger -> +30
+STEP = 30 if DESC else -30
+for n in nodes:
+    n["dyear"] = n["byear"]            # real year or None
+for _ in range(200):
+    changed = False
+    for n in nodes:
+        if n.get("dyear") is not None: continue
+        cands = ([n["child"]] if n["child"] is not None else []) + rev.get(n["id"], [])
+        for cid in cands:
+            m = nodes[cid]
+            if m.get("dyear") is not None:
+                val = m["dyear"] + STEP * (n["gen"] - m["gen"])
+                if val > 2026: val = 2026        # no future births from chained estimates
+                n["dyear"] = val
+                n["year_estimated"] = True; changed = True; break
+    if not changed:
+        break
+
+no_year = [n for n in nodes if n.get("dyear") is None]
+print("nodes without any display year:", len(no_year))
+for n in no_year[:20]:
+    print("   ", n["gen"], n["name"])
+
+yrs = [n["dyear"] for n in nodes if n.get("dyear") is not None]
+print("year range:", min(yrs), "->", max(yrs))
+print("estimated years:", sum(1 for n in nodes if n['year_estimated']))
+print("inherited places:", sum(1 for n in nodes if n['place_inherited']))
+
+# ---------- emit ----------
+out = []
+for n in nodes:
+    out.append({
+        "id": n["id"], "g": n["gen"], "n": n["name"], "u": n["url"],
+        "y": n.get("dyear"), "ye": n["year_estimated"],
+        "lat": round(n["lat"], 4) if n["lat"] is not None else None,
+        "lon": round(n["lon"], 4) if n["lon"] is not None else None,
+        "pi": n["place_inherited"], "c": n["child"], "b": n.get("branch"),
+        "ap": n["approx"],
+    })
+json.dump({"nodes": out, "branches": branch_names},
+          open("nodes.json", "w", encoding="utf-8"), ensure_ascii=False)
+print("wrote nodes.json")
