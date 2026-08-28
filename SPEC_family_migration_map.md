@@ -75,6 +75,9 @@ build_html.py  → <name>.html    (renders the template; flags select the varian
 2. **Geocode** `place` via a curated `PLACES` dict (village / parish / county → lat,lon).
    - County / country names are **low priority** (fallback only) so a specific village wins.
    - Keys cover **multilingual variants** where needed (Estonian / German / Russian / Cyrillic).
+   - Matching is anchored at a **left word boundary**, so a short key can't be grabbed from inside
+     a longer name (`"Prassi"` no longer hits the `rassi` key) while case endings still match
+     (`"Kõos"`, `"Emmastes"`). This prevents a stray mis‑match seeding a whole subtree via inheritance.
 3. **Inherit location (both directions):** a node with no place takes a coordinate from any
    geolocated neighbour — the partner it points to *or* a relative that points to it — so even the
    root / progenitor gets placed (flag `place_inherited`).
