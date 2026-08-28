@@ -212,10 +212,10 @@ HTML = r"""<!DOCTYPE html>
   #results button .sub{ color:var(--muted); font-size:11px; }
 
   /* year read-out (top-left) */
-  #hud{ position:fixed; top:14px; left:0; padding:0 22px; pointer-events:none;
+  #hud{ position:fixed; top:0; left:0; padding:18px 22px; pointer-events:none;
         text-shadow:0 1px 2px rgba(255,255,255,.6);}
   #year{ font-family:"Roboto Mono",monospace; font-weight:700;
-        font-size:clamp(44px,9vw,88px); line-height:.82; margin-top:-.11em; letter-spacing:-.01em;
+        font-size:clamp(44px,9vw,88px); line-height:.9; letter-spacing:-.01em;
         color:var(--on-surface); font-variant-numeric:tabular-nums;}
   #phase{ margin-top:6px; font:500 14px/1.3 "Roboto",sans-serif; color:var(--muted);
         max-width:min(60vw,420px);}
@@ -489,7 +489,7 @@ NODES.forEach(n=>{
 /* ---------- timeline / animation ---------- */
 const years=NODES.filter(n=>n.y!=null).map(n=>n.y);
 const yrMin=Math.min(...years), yrMax=Math.max(...years);
-const YMIN=yrMin-8, YMAX=Math.max(2026, yrMax);   // today, or later only if real data goes past it
+const YMIN=yrMin-8, YMAX=Math.max(2026, yrMax)+2;   // extend past 2026 if estimated years overshoot
 const START = FWD ? YMIN : YMAX;                  // where playback begins
 const END   = FWD ? YMAX : YMIN;                  // where playback ends
 const DIR   = FWD ? +1 : -1;                      // time direction while playing
