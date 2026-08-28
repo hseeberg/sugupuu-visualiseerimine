@@ -188,17 +188,23 @@ LOW = {"harjumaa","viljandimaa","viljandi","järvamaa","järva","hiiumaa",
        "järva maakond","hiiu maakond"}
 HIGH_KEYS = sorted([k for k in PLACES if k not in LOW], key=len, reverse=True)
 LOW_KEYS  = sorted([k for k in PLACES if k in LOW], key=len, reverse=True)
+# Match a key only at a LEFT word boundary (not preceded by a letter), so a Pilistvere-area key
+# like "rassi" can't be grabbed from inside another name like "Prassi". A trailing letter is fine,
+# so Estonian case endings still match ("Kõos", "Emmastes").
+_LB = r'(?<![a-zõäöüšž])'
+HIGH_PAT = [(re.compile(_LB + re.escape(k)), PLACES[k]) for k in HIGH_KEYS]
+LOW_PAT  = [(re.compile(_LB + re.escape(k)), PLACES[k]) for k in LOW_KEYS]
 
 def geocode(place):
     if not place:
         return None
     p = place.lower()
-    for k in HIGH_KEYS:      # specific village / parish first
-        if k in p:
-            return PLACES[k]
-    for k in LOW_KEYS:       # county fallback
-        if k in p:
-            return PLACES[k]
+    for pat, coord in HIGH_PAT:      # specific village / parish first
+        if pat.search(p):
+            return coord
+    for pat, coord in LOW_PAT:       # county fallback
+        if pat.search(p):
+            return coord
     return None
 
 # ---------- line parsing ----------
