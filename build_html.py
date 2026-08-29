@@ -190,10 +190,6 @@ HTML = r"""<!DOCTYPE html>
   .node .lbl{ font:500 11px/1 "Roboto",sans-serif; fill:var(--on-surface);
         paint-order:stroke; stroke:#fff; stroke-width:3.4px; stroke-linejoin:round;
         opacity:0; transition:opacity .3s; pointer-events:none; }
-  .node.abroad .plbl{ font:700 10px "Roboto",sans-serif; fill:#5D4037;
-        paint-order:stroke; stroke:#fff; stroke-width:3px; stroke-linejoin:round;
-        opacity:1; pointer-events:none; }
-  .node.abroad circle.dot{ stroke:#5D4037; stroke-width:2; }
   .node.on.key .lbl{ opacity:1; }
   .node.match .lbl{ opacity:1; font-weight:700; }              /* search hit: show name */
   .node:hover .lbl{ opacity:1; }                               /* hover: show this one name */
@@ -315,7 +311,7 @@ HTML = r"""<!DOCTYPE html>
 </div>
 
 <div id="hud">
-  <div id="year">2026</div>
+  <div id="year"></div>
   <div id="phase">Täna. Vajuta <b>Esita</b> — aeg liigub tagasi.</div>
   <div id="count">0 esivanemat kaardil</div>
 </div>
@@ -361,7 +357,7 @@ let bb={lo:1e9,LO:-1e9,la:1e9,LA:-1e9};
 function ext(lon,lat){bb.lo=Math.min(bb.lo,lon);bb.LO=Math.max(bb.LO,lon);
                       bb.la=Math.min(bb.la,lat);bb.LA=Math.max(bb.LA,lat);}
 MAP.land.forEach(r=>r.forEach(p=>ext(p[0],p[1])));
-NODES.forEach(n=>{ if(n.lon!=null && !n.ab) ext(n.lon,n.lat); });   // abroad pinned to edge, not framed
+NODES.forEach(n=>{ if(n.lon!=null) ext(n.lon,n.lat); });
 // pad frame a little (land extent only; lakes may spill east into background harmlessly)
 bb.LO+=0.08; bb.lo-=0.12; bb.la-=0.08; bb.LA+=0.08;
 const latMid=(bb.la+bb.LA)/2, kx=Math.cos(latMid*Math.PI/180);
@@ -370,15 +366,6 @@ const s=Math.min((VBW-2*PAD)/spanX,(VBH-2*PAD)/spanY);
 const offX=(VBW-spanX*s)/2, offY=(VBH-spanY*s)/2;
 function proj(lon,lat){
   return [ offX+(lon-bb.lo)*kx*s , offY+(bb.LA-lat)*s ];
-}
-const CX=VBW/2, CY=VBH/2;                    // frame centre ≈ Estonia centre after fit
-function edgePoint(px,py){                    // clamp a far point onto the frame, keeping direction
-  const minX=PAD*0.6,minY=PAD*0.6,maxX=VBW-PAD*0.6,maxY=VBH-PAD*0.6;
-  let dx=px-CX,dy=py-CY; if(!dx&&!dy) return [CX,CY];
-  let t=Infinity;
-  if(dx>0)t=Math.min(t,(maxX-CX)/dx); else if(dx<0)t=Math.min(t,(minX-CX)/dx);
-  if(dy>0)t=Math.min(t,(maxY-CY)/dy); else if(dy<0)t=Math.min(t,(minY-CY)/dy);
-  return [CX+dx*t,CY+dy*t];
 }
 // deterministic jitter so co-located dots declump
 function jit(id){ const a=(id*137.508)*Math.PI/180, r=(id%7)*0.006+0.004;
@@ -419,14 +406,7 @@ REFPLACES.forEach(([name,lat,lon,tier])=>{
 NODES.forEach(n=>{
   if(n.lon==null){n.px=null;return;}
   const q=proj(n.lon, n.lat);      // coords already declumped + land-checked at build time
-  if(n.ab){                        // foreign birth: pin to the frame edge in the true direction
-    const e=edgePoint(q[0],q[1]);
-    const dx=q[0]-CX, dy=q[1]-CY, L=Math.hypot(dx,dy)||1, tx=-dy/L, ty=dx/L;
-    const off=((n.id*29)%7 - 3)*7; // fan same-direction foreigners along the edge
-    n.px=e[0]+tx*off; n.py=e[1]+ty*off;
-  }else{
-    n.px=q[0]; n.py=q[1];          // screen coords (n.y stays = birth year)
-  }
+  n.px=q[0]; n.py=q[1];            // screen coords (n.y stays = birth year)
 });
 
 /* ---------- build links (courier arc between ancestor and descendant) ---------- */
@@ -478,14 +458,6 @@ NODES.forEach(n=>{
   lbl.setAttribute('x',R+4); lbl.setAttribute('y',4); lbl.setAttribute('text-anchor','start');
   lbl.textContent=n.n.length>26?n.n.slice(0,25)+'…':n.n;
   g.appendChild(pulse); g.appendChild(dot); g.appendChild(lbl);
-  if(n.ab){                                   // foreign birthplace name, always visible at the edge
-    g.classList.add('abroad');
-    const pl=document.createElementNS(SVGNS,'text');
-    pl.setAttribute('class','plbl');
-    pl.setAttribute('x',R+4); pl.setAttribute('y',-4); pl.setAttribute('text-anchor','start');
-    pl.textContent=(n.pl||'').split(',')[0].trim();
-    g.appendChild(pl);
-  }
   g._dot=dot; g._R=R; n._g=g;
   // no incoming courier arc -> dot pops instantly.
   //  back: only the proband/root.  FWD: leaf nodes (no linked earlier kin)
@@ -517,7 +489,8 @@ NODES.forEach(n=>{
 /* ---------- timeline / animation ---------- */
 const years=NODES.filter(n=>n.y!=null).map(n=>n.y);
 const yrMin=Math.min(...years), yrMax=Math.max(...years);
-const YMIN=yrMin-8, YMAX=Math.max(2026, yrMax)+2;   // extend past 2026 if estimated years overshoot
+const NOW=new Date().getFullYear();               // end at the user's current year (their computer)
+const YMIN=yrMin-8, YMAX=Math.max(NOW, yrMax);
 const START = FWD ? YMIN : YMAX;                  // where playback begins
 const END   = FWD ? YMAX : YMIN;                  // where playback ends
 const DIR   = FWD ? +1 : -1;                      // time direction while playing
@@ -609,7 +582,6 @@ function showTip(e,n){
   if(named) meta.push(genName(n.g));
   meta.push((n.ye?'sünd ~':'sünd ')+n.y + (n.ap?' (u.)':''));
   if(n.pi) meta.push('koht pärit lapselt');
-  if(n.ab && n.pl) meta.push('sünnikoht: '+n.pl.split(',').slice(0,2).join(',').trim());
   let html=`<b>${title}</b><br><span class="m">${meta.join(' · ')}</span>`;
   if(n.u) html+=`<br><span class="m">klõps → Geni profiil</span>`;
   tipEl.innerHTML=html;
