@@ -72,12 +72,14 @@ build_html.py  → <name>.html    (renders the template; flags select the varian
 ### 4.2 `parse.py` → `nodes.json`
 
 1. **Parse** each line → `{id, gen, name, url, byear, approx, place, child}`.
-2. **Geocode** `place` via a curated `PLACES` dict (village / parish / county → lat,lon).
-   - County / country names are **low priority** (fallback only) so a specific village wins.
-   - Keys cover **multilingual variants** where needed (Estonian / German / Russian / Cyrillic).
-   - Matching is anchored at a **left word boundary**, so a short key can't be grabbed from inside
-     a longer name (`"Prassi"` no longer hits the `rassi` key) while case endings still match
-     (`"Kõos"`, `"Emmastes"`). This prevents a stray mis‑match seeding a whole subtree via inheritance.
+2. **Geocode** `place` via a curated `PLACES` gazetteer (~400 entries: **every Estonian town and
+   historical parish (kihelkond)**, major settlements, the detailed Pilistvere / Hiiumaa / Setu /
+   Läänemaa village clusters, common **German exonyms** (Fellin, Dorpat, Pernau…), plus all county
+   centroids as a last‑resort fallback).
+   - County / country names are **low priority** (fallback only) so a specific village/parish wins.
+   - Matching is anchored at a **left word boundary** and a town key won't match a following
+     `maa` — so `"Prassi"` doesn't hit the `rassi` key and `"Tori khk, Pärnumaa"` resolves to
+     **Tori**, not Pärnu. Estonian case endings still match (`"Kõos"`, `"Emmastes"`).
 3. **Inherit location (both directions):** a node with no place takes a coordinate from any
    geolocated neighbour — the partner it points to *or* a relative that points to it — so even the
    root / progenitor gets placed (flag `place_inherited`).
@@ -184,12 +186,10 @@ names are hard‑coded in the template.
 
 1. Provide the `.md` export — an **ancestor** ahnentafel (gen 1 = proband) or a **descendant**
    chart (gen 1 = progenitor). Same line format either way.
-2. **Extend `PLACES`** in `parse.py` with the new tree's villages / parishes — the main manual
-   step. The dictionary now covers **all Estonian counties as a low‑priority fallback** (so any
-   `"village, County"` at least lands in the right county) plus village‑level detail for the
-   Pilistvere, Hiiumaa, Setu and **Läänemaa** clusters; add village coordinates for other regions
-   the same way. (Alternative: wire in a geocoding API and cache results into the same dict.)
-   `parse.py` prints any unmatched place strings so you can see what to add.
+2. **`PLACES` now covers all of Estonia** — every town and historical parish, plus village detail
+   for several regions. Most Estonian trees geocode out of the box (records are usually by parish).
+   If specific villages still land on a parish/county centre, add their coordinates to `PLACES` the
+   same way (or wire in a geocoding API). `parse.py` prints any unmatched place strings.
 3. If a **different country:** regenerate `map.json` (swap the country filter + lake names in
    `build_map.py`); review the island land‑clamp bbox in `parse.py`; and swap the grey
    **reference‑place list** (`REFPLACES` in `build_html.py`) for that country's cities/regions.
