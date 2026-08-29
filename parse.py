@@ -43,6 +43,13 @@ PLACES = {
     "lehtse": (59.20, 25.80), "imavere": (58.83, 25.83), "koigi": (58.85, 25.95),
     "väätsa": (58.88, 25.35), "roosna-alliku": (58.98, 25.62), "kareda": (59.05, 25.75),
     "albu": (59.10, 25.75), "järva-peetri": (58.79, 25.62), "paide khk": (58.885, 25.557),
+    # --- fixes: specific Järva / Väike-Maarja manors + German exonyms ---
+    "kuksema": (59.017, 25.867), "jürgensberg": (59.017, 25.867),
+    "kaltenbrunn": (58.980, 25.620), "kaltenbrun": (58.980, 25.620),
+    "liigvalla": (59.000, 26.150), "löwenwolde": (59.000, 26.150),
+    "udeva": (58.960, 26.080),
+    "öötla": (58.949, 25.736),                       # ~3.5 km SW of Esna (approx)
+    "esna": (58.971, 25.779), "esna mõis": (58.971, 25.779),
     # Lääne-Virumaa
     "haljala": (59.42, 26.27), "kadrina": (59.34, 26.13), "simuna": (59.03, 26.42),
     "väike-maarja": (59.121, 26.247), "viru-jaagupi": (59.23, 26.40), "viru-nigula": (59.35, 26.75),
@@ -296,17 +303,46 @@ _LB = r'(?<![a-zõäöüšž])'
 HIGH_PAT = [(re.compile(_LB + re.escape(k) + r'(?!maa)'), PLACES[k]) for k in HIGH_KEYS]
 LOW_PAT  = [(re.compile(_LB + re.escape(k)), PLACES[k]) for k in LOW_KEYS]
 
+# --- foreign birthplaces: TRUE world coords. Keyed on unambiguous city/state/country tokens so
+#     they never collide with Estonian names. These are rendered at the map EDGE (see build_html),
+#     not snapped back into Estonia, and are not inherited into domestic relatives. ---
+FOREIGN = {
+    "helsinki": (60.170, 24.938), "finland": (60.170, 24.938), "soome": (60.170, 24.938),
+    "ann arbor": (42.281, -83.743), "washtenaw": (42.281, -83.743), "michigan": (42.281, -83.743),
+    "lansing": (42.733, -84.556), "ingham": (42.733, -84.556),
+    "denver": (39.739, -104.990), "colorado": (39.739, -104.990),
+    "kyoto": (35.012, 135.768), "japan": (35.012, 135.768),
+    "akureyri": (65.689, -18.126), "iceland": (65.689, -18.126), "island": (65.689, -18.126),
+    "tomsk": (56.498, 84.974), "tomski": (56.498, 84.974),
+    "perm": (58.011, 56.250), "permi kubermang": (58.011, 56.250),
+}
+FOREIGN_KEYS = sorted(FOREIGN, key=len, reverse=True)
+FOREIGN_PAT  = [(re.compile(_LB + re.escape(k)), FOREIGN[k]) for k in FOREIGN_KEYS]
+
+def _best(pats, p):
+    """Leftmost match wins (village is written before parish/county); ties -> longer key."""
+    best_key = None; best_coord = None
+    for pat, coord in pats:
+        m = pat.search(p)
+        if m:
+            key = (m.start(), -(m.end() - m.start()))   # smaller start first, then longer key
+            if best_key is None or key < best_key:
+                best_key = key; best_coord = coord
+    return best_coord
+
 def geocode(place):
+    """Return (coord|None, abroad:bool). Specificity by POSITION: the leftmost token in a
+    'village, parish, county' string wins, so a specific village beats its parish."""
     if not place:
-        return None
+        return None, False
     p = place.lower()
-    for pat, coord in HIGH_PAT:      # specific village / parish first
-        if pat.search(p):
-            return coord
-    for pat, coord in LOW_PAT:       # county fallback
-        if pat.search(p):
-            return coord
-    return None
+    c = _best(HIGH_PAT, p)          # specific Estonian village / parish (leftmost)
+    if c: return c, False
+    c = _best(FOREIGN_PAT, p)       # foreign city/state/country -> true world coord
+    if c: return c, True
+    c = _best(LOW_PAT, p)           # Estonian county fallback
+    if c: return c, False
+    return None, False
 
 # ---------- line parsing ----------
 LINE_RE = re.compile(r'^[>\s]*(\d+)\\?\.\s*\[(.*?)\]\((https?://[^)]+)\)(.*)$')
@@ -370,6 +406,7 @@ for ln in raw_lines:
         "lat": None, "lon": None,
         "place_inherited": False,
         "year_estimated": False,
+        "abroad": False,
     })
     last_at_gen[gen] = idx
 
@@ -377,9 +414,10 @@ print("parsed nodes:", len(nodes))
 
 # ---------- geocode ----------
 for n in nodes:
-    c = geocode(n["place"])
-    if c:
-        n["lat"], n["lon"] = c[0], c[1]
+    coord, abroad = geocode(n["place"])
+    if coord:
+        n["lat"], n["lon"] = coord[0], coord[1]
+        n["abroad"] = abroad
 
 geo_known = sum(1 for n in nodes if n["lat"] is not None)
 print("geocoded directly:", geo_known, "/", len(nodes))
@@ -440,10 +478,18 @@ while changed:
     for n in nodes:
         if n["lat"] is not None: continue
         cands = ([n["child"]] if n["child"] is not None else []) + rev.get(n["id"], [])
-        for cid in cands:
-            if cid is not None and nodes[cid]["lat"] is not None:
-                n["lat"], n["lon"] = nodes[cid]["lat"], nodes[cid]["lon"]
-                n["place_inherited"] = True; changed = True; break
+        src = None
+        for cid in cands:                        # prefer a domestic (non-abroad) neighbour
+            if cid is not None and nodes[cid]["lat"] is not None and not nodes[cid].get("abroad"):
+                src = cid; break
+        if src is None:                          # else any neighbour (may itself be abroad)
+            for cid in cands:
+                if cid is not None and nodes[cid]["lat"] is not None:
+                    src = cid; break
+        if src is not None:
+            n["lat"], n["lon"] = nodes[src]["lat"], nodes[src]["lon"]
+            n["abroad"] = nodes[src].get("abroad", False)   # inherit abroad-ness too (kept off-map)
+            n["place_inherited"] = True; changed = True
 
 order = sorted(range(len(nodes)), key=lambda i: nodes[i]["gen"])
 still_missing = [n for n in nodes if n["lat"] is None]
@@ -559,6 +605,8 @@ for n in nodes:
         "lon": round(n["lon"], 4) if n["lon"] is not None else None,
         "pi": n["place_inherited"], "c": n["child"], "b": n.get("branch"),
         "ap": n["approx"],
+        "ab": 1 if n.get("abroad") else 0,
+        "pl": (n["place"] or "") if n.get("abroad") else "",
     })
 json.dump({"nodes": out, "branches": branch_names},
           open("nodes.json", "w", encoding="utf-8"), ensure_ascii=False)
