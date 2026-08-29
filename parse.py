@@ -10,6 +10,107 @@ PLACES = {
     # --- Tallinn / Harju ---
     "tallinn": (59.437, 24.754),
     "harjumaa": (59.35, 24.9),
+    # ===================== COMPREHENSIVE ESTONIA (towns + historical parishes) =====================
+    # Towns (linnad)
+    "tartu": (58.378, 26.729), "narva": (59.377, 28.190), "pärnu": (58.386, 24.497),
+    "kohtla-järve": (59.398, 27.273), "rakvere": (59.346, 26.356), "maardu": (59.476, 25.025),
+    "sillamäe": (59.390, 27.755), "kuressaare": (58.253, 22.485), "võru": (57.834, 27.019),
+    "haapsalu": (58.943, 23.541), "jõhvi": (59.359, 27.421), "paide": (58.885, 25.557),
+    "keila": (59.303, 24.413), "kiviõli": (59.353, 26.970), "tapa": (59.261, 25.958),
+    "põlva": (58.060, 27.069), "elva": (58.222, 26.421), "rapla": (59.007, 24.792),
+    "jõgeva": (58.746, 26.394), "kärdla": (58.998, 22.749), "saue": (59.319, 24.552),
+    "põltsamaa": (58.653, 25.972), "sindi": (58.401, 24.660), "paldiski": (59.356, 24.056),
+    "tõrva": (58.003, 25.933), "kunda": (59.500, 26.541), "loksa": (59.578, 25.717),
+    "mustvee": (58.849, 26.940), "kallaste": (58.658, 27.163), "abja-paluoja": (58.126, 25.353),
+    "antsla": (57.824, 26.542), "kilingi-nõmme": (58.126, 24.966), "mõisaküla": (58.093, 25.184),
+    "otepää": (58.058, 26.497), "räpina": (58.098, 27.463), "tamsalu": (59.163, 26.113),
+    "püssi": (59.365, 27.045), "kehra": (59.336, 25.324), "narva-jõesuu": (59.457, 28.041),
+    # Harjumaa parishes / settlements
+    "hageri": (59.10, 24.65), "harju-jaani": (59.30, 25.15), "harju-madise": (59.30, 24.10),
+    "madise": (59.30, 24.10), "jõelähtme": (59.42, 25.17), "juuru": (59.03, 24.87),
+    "jüri": (59.30, 24.90), "kose": (59.18, 25.17),
+    "kuusalu": (59.44, 25.49), "nissi": (59.10, 24.30), "harju-risti": (59.00, 24.05),
+    "saku": (59.30, 24.68), "saha": (59.42, 25.02), "kernu": (59.13, 24.42),
+    "raasiku": (59.36, 25.19), "aegviidu": (59.263, 25.628), "kolga": (59.50, 25.60),
+    "kõue": (59.10, 25.30),
+    # Raplamaa
+    "kehtna": (58.93, 24.88), "käru": (58.80, 25.10), "hagudi": (58.97, 24.70),
+    "järvakandi": (58.77, 24.82), "kaiu": (58.92, 25.05), "raikküla": (58.90, 24.62),
+    "vahastu": (58.88, 25.00), "rapla khk": (59.007, 24.792),
+    # Järvamaa
+    "ambla": (59.18, 25.83), "anna": (58.98, 25.90), "järva-jaani": (59.03, 25.89),
+    "järva-madise": (58.95, 25.55), "koeru": (58.97, 26.03), "peetri": (58.79, 25.62),
+    "lehtse": (59.20, 25.80), "imavere": (58.83, 25.83), "koigi": (58.85, 25.95),
+    "väätsa": (58.88, 25.35), "roosna-alliku": (58.98, 25.62), "kareda": (59.05, 25.75),
+    "albu": (59.10, 25.75), "järva-peetri": (58.79, 25.62), "paide khk": (58.885, 25.557),
+    # Lääne-Virumaa
+    "haljala": (59.42, 26.27), "kadrina": (59.34, 26.13), "simuna": (59.03, 26.42),
+    "väike-maarja": (59.121, 26.247), "viru-jaagupi": (59.23, 26.40), "viru-nigula": (59.35, 26.75),
+    "vinni": (59.29, 26.43), "sõmeru": (59.33, 26.32), "rakke": (58.98, 26.25),
+    "laekvere": (59.15, 26.55), "rägavere": (59.30, 26.65), "avanduse": (59.10, 26.35),
+    "kadrina khk": (59.34, 26.13), # Ida-Virumaa
+    "iisaku": (59.10, 27.30), "lüganuse": (59.36, 27.02), "vaivara": (59.36, 28.10),
+    "tudulinna": (59.10, 27.05), "illuka": (59.22, 27.55), "mäetaguse": (59.23, 27.35),
+    "toila": (59.42, 27.51), "voka": (59.42, 27.55), "avinurme": (58.99, 26.90),
+    "jõhvi khk": (59.359, 27.421), "kohtla": (59.40, 27.30), "vasknarva": (59.00, 27.72),
+    # Jõgevamaa
+    "laiuse": (58.80, 26.40), "palamuse": (58.68, 26.55), "torma": (58.87, 26.75),
+    "kursi": (58.65, 26.30), "maarja-magdaleena": (58.63, 26.85), "sadala": (58.80, 26.60),
+    "kasepää": (58.75, 27.05), "kudina": (58.55, 26.75), "vaimastvere": (58.80, 26.35),
+    "kuremaa": (58.75, 26.50), "laiuse khk": (58.80, 26.40),
+    # Tartumaa
+    "kambja": (58.21, 26.68), "kodavere": (58.60, 27.10), "nõo": (58.28, 26.53),
+    "puhja": (58.32, 26.30), "rannu": (58.30, 26.10), "rõngu": (58.15, 26.25),
+    "võnnu": (58.28, 27.10), "äksi": (58.55, 26.75), "kavastu": (58.45, 27.00),
+    "alatskivi": (58.60, 27.12), "luunja": (58.37, 26.85),
+    "kastre": (58.30, 27.00), "ülenurme": (58.32, 26.68), "mäksa": (58.35, 27.05),
+    "tartu-maarja": (58.40, 26.75), "nõo khk": (58.28, 26.53), "kursi khk": (58.65, 26.30),
+    # Viljandimaa (parishes beyond the Pilistvere cluster)
+    "halliste": (58.16, 25.19), "kolga-jaani": (58.51, 25.83), "kõpu": (58.30, 25.30),
+    "paistu": (58.28, 25.55), "tarvastu": (58.27, 25.90), "karksi": (58.106, 25.560),
+    "suislepa": (58.20, 25.80), "holstre": (58.30, 25.65), "abja": (58.126, 25.353),
+    "mõisaküla khk": (58.093, 25.184), "kolga-jaani khk": (58.51, 25.83),
+    # Pärnumaa
+    "audru": (58.40, 24.35), "halinga": (58.62, 24.50), "pärnu-jaagupi": (58.62, 24.50),
+    "häädemeeste": (58.08, 24.50), "mihkli": (58.60, 24.10), "tõstamaa": (58.35, 23.90),
+    "tori": (58.48, 24.80), "vändra": (58.653, 25.033), "saarde": (58.20, 24.95),
+    "tahkuranna": (58.20, 24.55), "uulu": (58.25, 24.55),
+    "surju": (58.20, 24.85), "kihnu": (58.13, 24.00), "koonga": (58.50, 24.10),
+    "varbla": (58.48, 23.80), "vändra khk": (58.653, 25.033), "pärnu-jaagupi khk": (58.62, 24.50),
+    # Läänemaa extras
+    "risti khk": (59.00, 24.05), "palivere": (59.02, 23.85), "kirbla khk": (58.72, 23.87),
+    # Saaremaa / Muhu
+    "kaarma": (58.28, 22.45), "karja": (58.50, 22.80), "kihelkonna": (58.36, 21.98),
+    "kärla": (58.30, 22.30), "mustjala": (58.50, 22.30), "anseküla": (58.10, 22.20),
+    "jämaja": (57.95, 22.05), "pöide": (58.53, 23.05), "püha": (58.35, 22.60),
+    "valjala": (58.40, 22.80), "orissaare": (58.56, 23.08), "leisi": (58.55, 22.70),
+    "salme": (58.13, 22.27), "torgu": (57.98, 22.10), "pihtla": (58.30, 22.60),
+    "laimjala": (58.45, 23.00), "muhu": (58.61, 23.20), "ruhnu": (57.80, 23.25),
+    "jaani, saare": (58.53, 22.90), "kaarma khk": (58.28, 22.45),
+    # Hiiumaa parishes (beyond the Emmaste/Käina village cluster)
+    "käina": (58.828, 22.780), "emmaste": (58.717, 22.620), "pühalepa": (58.87, 22.90),
+    "reigi": (58.98, 22.55), "kõrgessaare": (58.99, 22.42), "kärdla khk": (58.998, 22.749),
+    "hellamaa": (58.85, 22.85), "kõpu, hiiu": (58.92, 22.20), "lauka": (58.95, 22.45),
+    "suuremõisa": (58.88, 22.95),
+    # Võrumaa / Põlvamaa
+    "kanepi": (57.99, 26.75), "karula": (57.75, 26.35), "rõuge": (57.73, 26.91),
+    "urvaste": (57.90, 26.50), "vastseliina": (57.73, 27.42), "hargla": (57.60, 26.42),
+    "mõniste": (57.65, 26.55), "varstu": (57.68, 26.70), "misso": (57.65, 27.30),
+    "haanja": (57.72, 27.03), "orava": (57.95, 27.40), "kõlleste": (58.05, 26.85),
+    "räpina khk": (58.098, 27.463), "põlva khk": (58.060, 27.069), "kanepi khk": (57.99, 26.75),
+    "veriora": (58.05, 27.30), "ahja": (58.15, 27.05), "mooste": (58.17, 27.25),
+    # Valgamaa
+    "helme": (58.02, 25.80), "sangaste": (57.93, 26.28), "tõlliste": (57.85, 26.20),
+    "hummuli": (57.90, 25.95), "taheva": (57.65, 26.20), "puka": (58.05, 26.20),
+    "palupera": (58.10, 26.30), "õru": (57.85, 26.05), "otepää khk": (58.058, 26.497),
+    "helme khk": (58.02, 25.80),
+    # German exonyms (Kurrent-era records)
+    "reval": (59.437, 24.754), "dorpat": (58.378, 26.729), "pernau": (58.386, 24.497),
+    "fellin": (58.364, 25.590), "weissenstein": (58.885, 25.557), "wesenberg": (59.346, 26.356),
+    "hapsal": (58.943, 23.541), "arensburg": (58.253, 22.485), "werro": (57.834, 27.019),
+    "walk": (57.777, 26.047), "oberpahlen": (58.653, 25.972), "leal": (58.680, 23.843),
+    "baltischport": (59.356, 24.056), "wenden": (57.31, 25.27),
+    # ==============================================================================================
     # --- Viljandimaa: Pilistvere / Kabala / Kõo cluster (from detail crop) ---
     "sagevere": (58.845, 25.520),
     "türi": (58.808, 25.432),
@@ -192,7 +293,7 @@ LOW_KEYS  = sorted([k for k in PLACES if k in LOW], key=len, reverse=True)
 # like "rassi" can't be grabbed from inside another name like "Prassi". A trailing letter is fine,
 # so Estonian case endings still match ("Kõos", "Emmastes").
 _LB = r'(?<![a-zõäöüšž])'
-HIGH_PAT = [(re.compile(_LB + re.escape(k)), PLACES[k]) for k in HIGH_KEYS]
+HIGH_PAT = [(re.compile(_LB + re.escape(k) + r'(?!maa)'), PLACES[k]) for k in HIGH_KEYS]
 LOW_PAT  = [(re.compile(_LB + re.escape(k)), PLACES[k]) for k in LOW_KEYS]
 
 def geocode(place):
