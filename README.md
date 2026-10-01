@@ -4,7 +4,7 @@ Mõeldud Claude kasutajatele!
 
 1. ÜLEVAADE
 
-Kasuta neid faile Claudes, et visualiseerida sinu Eestist pärit otseste esivanemate või nende järeltulijate andmeid Eesti kaardi peal. HTML failis töötaval kaardi abil on võimalik näha, mis asukohaandmed on puudu või vajavad täpsustamist. Iga isiku peale tema on võimalik klikata ning saada otseviide tema Geni.com profiilile, kiirendades sedasi andmete muutmist. 
+Kasuta neid faile Claudes, et visualiseerida sinu Eestist pärit otseste esivanemate või nende järeltulijate andmeid Eesti kaardi peal. HTML failis töötaval kaardi abil on näiteks võimalik naha, mis asukohaandmed on puudu või vajavad täpsustamist Geni.com´is. Iga isiku peale on võimalik klikata ning saada otseviide tema Geni.com profiilile, kiirendades sedasi andmete muutmist. 
 
 
 2. KUIDAS KASUTADA?
